@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>OIF CMIS 5.2 — Structure & State Machine Diagrams</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d1117;
+    --bg2: #161b22;
+    --bg3: #21262d;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text2: #8b949e;
+    --text3: #484f58;
+    --accent: #58a6ff;
+    --accent2: #3fb950;
+    --amber: #d29922;
+    --red: #f85149;
+    --coral: #ff7b72;
+    --purple: #bc8cff;
+    --teal: #39d353;
+    --blue: #58a6ff;
+    --radius: 8px;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .site-header {
+    border-bottom: 1px solid var(--border);
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 2px 8px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+  }
+  .site-header h1 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .site-header span {
+    font-size: 13px;
+    color: var(--text2);
+  }
+
+  /* Tab navigation */
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    background: var(--bg);
+    overflow-x: auto;
+  }
+  .tab-btn {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 14px 20px;
+    color: var(--text2);
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 400;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color .15s, border-color .15s;
+    margin-bottom: -1px;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active {
+    color: var(--text);
+    font-weight: 600;
+    border-bottom-color: var(--accent);
+  }
+
+  /* Content */
+  .content { padding: 32px; max-width: 1100px; margin: 0 auto; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .section-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text3);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  /* SVG container */
+  .diagram-wrap {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px 16px;
+    overflow-x: auto;
+  }
+  .diagram-wrap svg { display: block; margin: 0 auto; }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 20px;
+    padding: 16px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text2);
+  }
+  .legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+
+  /* Description boxes */
+  .desc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+    margin-top: 20px;
+  }
+  .desc-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+  .desc-card .state-name {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .desc-card p {
+    font-size: 12px;
+    color: var(--text2);
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <span class="badge">OIF</span>
+  <h1>CMIS 5.2 — Common Management Interface Specification</h1>
+  <span>Rev. April 2022 · 344 pages</span>
+</header>
+
+<nav class="tabs">
+  <button class="tab-btn active" onclick="showTab(0)">📋 Document Structure</button>
+  <button class="tab-btn" onclick="showTab(1)">🔄 Module State Machine (MSM)</button>
+  <button class="tab-btn" onclick="showTab(2)">⚡ Data Path State Machine (DPSM)</button>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════
+     TAB 0: Document Structure
+═══════════════════════════════════════════════════ -->
+<div class="content">
+<div class="panel active" id="tab0">
+  <p class="section-title">Document hierarchy</p>
+  <div class="diagram-wrap">
+  <svg width="100%" viewBox="0 0 980 620" xmlns="http://www.w3.org/2000/svg" style="max-width:980px">
+    <defs>
+      <style>
+        .lbl  { font-family:'IBM Plex Mono',monospace; font-size:11px; fill:#8b949e; letter-spacing:0.5px; }
+        .title { font-family:'IBM Plex Sans',sans-serif; font-size:13px; font-weight:600; fill:#e6edf3; }
+        .sub  { font-family:'IBM Plex Sans',sans-serif; font-size:11px; fill:#8b949e; }
+        .mono { font-family:'IBM Plex Mono',monospace; font-size:10px; fill:#8b949e; }
+      </style>
+    </defs>
+
+    <!-- ── HEADER ── -->
+    <rect x="20" y="10" width="940" height="52" rx="8" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+    <text x="480" y="32" text-anchor="middle" class="title" fill="#58a6ff">OIF CMIS 5.2 — Common Management Interface Specification</text>
+    <text x="480" y="51" text-anchor="middle" class="sub">Revision 5.2 · April 2022 · OIF-CMIS-05.2 · Applies to QSFP-DD, OSFP, COBO, QSFP and other pluggable/on-board modules</text>
+
+    <!-- ── ROW 1: Ch1-4 ── w=220 gap=13 -->
+    <!-- Ch1 -->
+    <rect x="20" y="78" width="220" height="58" rx="6" fill="#21262d" stroke="#30363d" stroke-width="1"/>
+    <text x="110" y="99" text-anchor="middle" class="lbl">CHAPTER 1</text>
+    <text x="110" y="117" text-anchor="middle" class="title" font-size="12">Purpose &amp; Scope</text>
+    <text x="110" y="131" text-anchor="middle" class="sub">CMIS compliance · Module types</text>
+    <!-- Ch2 -->
+    <rect x="253" y="78" width="220" height="58" rx="6" fill="#21262d" stroke="#30363d" stroke-width="1"/>
+    <text x="363" y="99" text-anchor="middle" class="lbl">CHAPTER 2</text>
+    <text x="363" y="117" text-anchor="middle" class="title" font-size="12">References &amp; Conventions</text>
+    <text x="363" y="131" text-anchor="middle" class="sub">Standards · Notation · Addressing</text>
+    <!-- Ch3 -->
+    <rect x="486" y="78" width="220" height="58" rx="6" fill="#21262d" stroke="#30363d" stroke-width="1"/>
+    <text x="596" y="99" text-anchor="middle" class="lbl">CHAPTER 3</text>
+    <text x="596" y="117" text-anchor="middle" class="title" font-size="12">Definitions</text>
+    <text x="596" y="131" text-anchor="middle" class="sub">Keywords · Abbreviations · Data types</text>
+    <!-- Ch4 -->
+    <rect x="719" y="78" width="241" height="58" rx="6" fill="#21262d" stroke="#30363d" stroke-width="1"/>
+    <text x="839" y="99" text-anchor="middle" class="lbl">CHAPTER 4</text>
+    <text x="839" y="117" text-anchor="middle" class="title" font-size="12">Introduction</text>
+    <text x="839" y="131" text-anchor="middle" class="sub">Protocols · Compliance · Overview</text>
+
+    <!-- ── ROW 2: Ch5 ── -->
+    <rect x="20" y="152" width="940" height="54" rx="6" fill="#0d2535" stroke="#58a6ff" stroke-width="1"/>
+    <text x="100" y="172" text-anchor="middle" class="lbl" fill="#58a6ff">CHAPTER 5</text>
+    <text x="480" y="172" text-anchor="middle" class="title" fill="#58a6ff">Management Interface</text>
+    <text x="480" y="191" text-anchor="middle" class="sub" fill="#4a7fa8">MSL control &amp; status signals · Register Access Layer (RAL) · I²C-based MCI (I2CMCI) · READ / WRITE / TEST access methods · Data coherency rules</text>
+
+    <!-- ── ROW 3: Ch6 (outer) ── -->
+    <rect x="20" y="222" width="940" height="140" rx="6" fill="#1a1f10" stroke="#3fb950" stroke-width="1"/>
+    <text x="60" y="244" class="lbl" fill="#3fb950">CHAPTER 6</text>
+    <text x="480" y="244" text-anchor="middle" class="title" fill="#3fb950">Core Management Features</text>
+
+    <!-- Ch6 inner: 3 boxes w=290 gap=15, x=30,335,640 -->
+    <rect x="30" y="252" width="290" height="100" rx="5" fill="#21262d" stroke="#30363d" stroke-width="1"/>
+    <text x="175" y="274" text-anchor="middle" class="lbl">6.1 MODULE BASICS</text>
+    <text x="175" y="294" text-anchor="middle" class="sub">Host interface (8 lanes Tx/Rx)</text>
+    <text x="175" y="310" text-anchor="middle" class="sub">Media interface</text>
+    <text x="175" y="326" text-anchor="middle" class="sub">Memory map representations</text>
+    <text x="175" y="342" text-anchor="middle" class="sub">Flag / mask / interrupt model</text>
+
+    <rect x="335" y="252" width="290" height="100" rx="5" fill="#21262d" stroke="#30363d" stroke-width="1"/>
+    <text x="480" y="274" text-anchor="middle" class="lbl">6.2 FUNCTIONAL MODEL</text>
+    <text x="480" y="294" text-anchor="middle" class="sub">Applications &amp; AppSel codes</text>
+    <text x="480" y="310" text-anchor="middle" class="sub">Data path lane assignment</text>
+    <text x="480" y="326" text-anchor="middle" class="sub">Control sets (staged config)</text>
+    <text x="480" y="342" text-anchor="middle" class="sub">ApplyDPInit / ApplyImmediate cmds</text>
+
+    <rect x="640" y="252" width="310" height="100" rx="5" fill="#0d1e18" stroke="#3fb950" stroke-width="1"/>
+    <text x="795" y="274" text-anchor="middle" class="lbl" fill="#3fb950">6.3 BEHAVIORAL MODEL ★</text>
+    <text x="795" y="294" text-anchor="middle" class="sub">MSM — Module State Machine (8 states)</text>
+    <text x="795" y="310" text-anchor="middle" class="sub">DPSM — Data Path State Machine (7 states)</text>
+    <text x="795" y="326" text-anchor="middle" class="sub">NPSM — Network Path State Machine</text>
+    <text x="795" y="342" text-anchor="middle" class="sub">Flagging conformance rules per state</text>
+
+    <!-- ── ROW 4: Ch7 (outer) ── -->
+    <rect x="20" y="378" width="940" height="148" rx="6" fill="#1e1a0d" stroke="#d29922" stroke-width="1"/>
+    <text x="60" y="400" class="lbl" fill="#d29922">CHAPTER 7</text>
+    <text x="480" y="400" text-anchor="middle" class="title" fill="#d29922">Advanced Management Features</text>
+
+    <!-- Ch7 inner: 5 boxes w=170 gap=12, x=30,212,394,576,758 -->
+    <rect x="30" y="408" width="170" height="108" rx="5" fill="#21262d" stroke="#30363d" stroke-width="1"/>
+    <text x="115" y="428" text-anchor="middle" class="lbl">7.1 VDM</text>
+    <text x="115" y="448" text-anchor="middle" class="sub">Versatile Diagnostics</text>
+    <text x="115" y="464" text-anchor="middle" class="sub">Monitoring</text>
+    <text x="115" y="480" text-anchor="middle" class="mono">eSNR · LTP · FEC</text>
+    <text x="115" y="496" text-anchor="middle" class="mono">TEC · PAM4 obs.</text>
+
+    <rect x="212" y="408" width="170" height="108" rx="5" fill="#21262d" stroke="#30363d" stroke-width="1"/>
+    <text x="297" y="428" text-anchor="middle" class="lbl">7.2 CDB</text>
+    <text x="297" y="448" text-anchor="middle" class="sub">Cmd Data Block</text>
+    <text x="297" y="464" text-anchor="middle" class="sub">Messaging</text>
+    <text x="297" y="480" text-anchor="middle" class="mono">Foreground mode</text>
+    <text x="297" y="496" text-anchor="middle" class="mono">Background mode</text>
+
+    <rect x="394" y="408" width="170" height="108" rx="5" fill="#21262d" stroke="#30363d" stroke-width="1"/>
+    <text x="479" y="428" text-anchor="middle" class="lbl">7.3–7.4</text>
+    <text x="479" y="448" text-anchor="middle" class="sub">FW Management</text>
+    <text x="479" y="464" text-anchor="middle" class="sub">&amp; Boot Record</text>
+    <text x="479" y="480" text-anchor="middle" class="mono">Download/Upload</text>
+    <text x="479" y="496" text-anchor="middle" class="mono">MBR · PM via CDB</text>
+
+    <rect x="576" y="408" width="170" height="108" rx="5" fill="#21262d" stroke="#30363d" stroke-width="1"/>
+    <text x="661" y="428" text-anchor="middle" class="lbl">7.5 TUNABLE</text>
+    <text x="661" y="448" text-anchor="middle" class="sub">Tunable Lasers</text>
+    <text x="661" y="464" text-anchor="middle" class="sub">Channel Selection</text>
+    <text x="661" y="480" text-anchor="middle" class="mono">Center freq. setting</text>
+    <text x="661" y="496" text-anchor="middle" class="mono">Grid: 33/75/100 GHz</text>
+
+    <rect x="758" y="408" width="192" height="108" rx="5" fill="#21262d" stroke="#30363d" stroke-width="1"/>
+    <text x="854" y="428" text-anchor="middle" class="lbl">7.6–7.7</text>
+    <text x="854" y="448" text-anchor="middle" class="sub">Client Encapsulation</text>
+    <text x="854" y="464" text-anchor="middle" class="sub">(Multiplexing)</text>
+    <text x="854" y="480" text-anchor="middle" class="mono">NPSM · Mux/Uniplex</text>
+    <text x="854" y="496" text-anchor="middle" class="mono">Hot reconfig (7.7)</text>
+
+    <!-- ── ROW 5: Ch8/9/10 ── w=296 gap=16 -->
+    <rect x="20" y="542" width="296" height="58" rx="6" fill="#1a1320" stroke="#bc8cff" stroke-width="1"/>
+    <text x="168" y="562" text-anchor="middle" class="lbl" fill="#bc8cff">CHAPTER 8</text>
+    <text x="168" y="580" text-anchor="middle" class="title" font-size="12" fill="#bc8cff">Memory Map</text>
+    <text x="168" y="594" text-anchor="middle" class="sub">Pages 00h–15h · Lower/Upper mem · Banks</text>
+
+    <rect x="332" y="542" width="296" height="58" rx="6" fill="#1a1320" stroke="#bc8cff" stroke-width="1"/>
+    <text x="480" y="562" text-anchor="middle" class="lbl" fill="#bc8cff">CHAPTER 9</text>
+    <text x="480" y="580" text-anchor="middle" class="title" font-size="12" fill="#bc8cff">CDB Messages</text>
+    <text x="480" y="594" text-anchor="middle" class="sub">FW Download · Upload · PM · Custom cmds</text>
+
+    <rect x="644" y="542" width="316" height="58" rx="6" fill="#1a1320" stroke="#bc8cff" stroke-width="1"/>
+    <text x="802" y="562" text-anchor="middle" class="lbl" fill="#bc8cff">CHAPTER 10</text>
+    <text x="802" y="580" text-anchor="middle" class="title" font-size="12" fill="#bc8cff">Timing Specifications</text>
+    <text x="802" y="594" text-anchor="middle" class="sub">MCI timings · State transition timings</text>
+  </svg>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#58a6ff;"></div>Management interface foundation</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#3fb950;"></div>Core features (Ch6)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#d29922;"></div>Advanced features (Ch7)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#bc8cff;"></div>Register map &amp; timing (Ch8–10)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#21262d;border:1px solid #30363d;"></div>Sub-chapters</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     TAB 1: Module State Machine
+═══════════════════════════════════════════════════ -->
+<div class="panel" id="tab1">
+  <p class="section-title">Section 6.3.2 — Module State Machine (MSM)</p>
+  <div class="diagram-wrap">
+  <svg width="100%" viewBox="0 0 760 680" xmlns="http://www.w3.org/2000/svg" style="max-width:760px">
+    <defs>
+      <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M1 1L9 5L1 9" fill="none" stroke="#8b949e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </marker>
+      <marker id="ah-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M1 1L9 5L1 9" fill="none" stroke="#f85149" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </marker>
+      <marker id="ah-grn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M1 1L9 5L1 9" fill="none" stroke="#3fb950" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </marker>
+      <style>
+        .sn { font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; }
+        .ss { font-family:'IBM Plex Sans',sans-serif; font-size:11px; }
+        .sl { font-family:'IBM Plex Sans',sans-serif; font-size:10px; }
+      </style>
+    </defs>
+
+    <!-- Main column states: center x=220, x=110 w=220 h=50 gap=30 -->
+
+    <!-- 1. Resetting -->
+    <rect x="110" y="20" width="220" height="50" rx="8" fill="#21262d" stroke="#484f58" stroke-width="1.5" stroke-dasharray="5 3"/>
+    <text x="220" y="41" text-anchor="middle" class="sn" fill="#8b949e">Resetting</text>
+    <text x="220" y="59" text-anchor="middle" class="ss" fill="#484f58">Shutting down (transient)</text>
+
+    <!-- 2. Reset -->
+    <rect x="110" y="110" width="220" height="50" rx="8" fill="#21262d" stroke="#30363d" stroke-width="1.5"/>
+    <text x="220" y="131" text-anchor="middle" class="sn" fill="#8b949e">Reset</text>
+    <text x="220" y="149" text-anchor="middle" class="ss" fill="#484f58">Ground state — lowest power</text>
+
+    <!-- 3. MgmtInit -->
+    <rect x="110" y="200" width="220" height="50" rx="8" fill="#0d2535" stroke="#58a6ff" stroke-width="1.5"/>
+    <text x="220" y="221" text-anchor="middle" class="sn" fill="#58a6ff">MgmtInit</text>
+    <text x="220" y="239" text-anchor="middle" class="ss" fill="#4a7fa8">Initializing management interface</text>
+
+    <!-- 4. ModuleLowPwr -->
+    <rect x="110" y="290" width="220" height="50" rx="8" fill="#0d1e18" stroke="#3fb950" stroke-width="1.5"/>
+    <text x="220" y="311" text-anchor="middle" class="sn" fill="#3fb950">ModuleLowPwr</text>
+    <text x="220" y="329" text-anchor="middle" class="ss" fill="#2d7a45">Basic manageability only</text>
+
+    <!-- 5. ModulePwrUp -->
+    <rect x="110" y="380" width="220" height="50" rx="8" fill="#1e1a0d" stroke="#d29922" stroke-width="1.5"/>
+    <text x="220" y="401" text-anchor="middle" class="sn" fill="#d29922">ModulePwrUp</text>
+    <text x="220" y="419" text-anchor="middle" class="ss" fill="#7a6010">Powering up</text>
+
+    <!-- 6. ModuleReady -->
+    <rect x="110" y="470" width="220" height="50" rx="8" fill="#0d1e18" stroke="#58c962" stroke-width="2"/>
+    <text x="220" y="491" text-anchor="middle" class="sn" fill="#58c962">ModuleReady ★</text>
+    <text x="220" y="509" text-anchor="middle" class="ss" fill="#3a8f46">Fully operational</text>
+
+    <!-- RIGHT COLUMN -->
+    <!-- 7. ModulePwrDn: aligned with ModulePwrUp y=380 -->
+    <rect x="490" y="380" width="220" height="50" rx="8" fill="#1e1a0d" stroke="#d29922" stroke-width="1.5"/>
+    <text x="600" y="401" text-anchor="middle" class="sn" fill="#d29922">ModulePwrDn</text>
+    <text x="600" y="419" text-anchor="middle" class="ss" fill="#7a6010">Powering down</text>
+
+    <!-- 8. ModuleFault: aligned with ModuleReady y=470 -->
+    <rect x="490" y="470" width="220" height="50" rx="8" fill="#2d1010" stroke="#f85149" stroke-width="1.5"/>
+    <text x="600" y="491" text-anchor="middle" class="sn" fill="#f85149">ModuleFault</text>
+    <text x="600" y="509" text-anchor="middle" class="ss" fill="#8b2020">Module fault detected</text>
+
+    <!-- ── MAIN FLOW ARROWS ── -->
+    <!-- Resetting → Reset -->
+    <line x1="220" y1="70" x2="220" y2="110" stroke="#484f58" stroke-width="1" marker-end="url(#ah)"/>
+    <text x="228" y="95" class="sl" fill="#484f58">reset deasserted</text>
+
+    <!-- Reset → MgmtInit -->
+    <line x1="220" y1="160" x2="220" y2="200" stroke="#8b949e" stroke-width="1" marker-end="url(#ah)"/>
+    <text x="228" y="185" class="sl" fill="#484f58">management ready</text>
+
+    <!-- MgmtInit → ModuleLowPwr -->
+    <line x1="220" y1="250" x2="220" y2="290" stroke="#8b949e" stroke-width="1" marker-end="url(#ah)"/>
+    <text x="228" y="275" class="sl" fill="#484f58">MgmtInit complete</text>
+
+    <!-- ModuleLowPwr → ModulePwrUp -->
+    <line x1="220" y1="340" x2="220" y2="380" stroke="#3fb950" stroke-width="1" marker-end="url(#ah-grn)"/>
+    <text x="228" y="365" class="sl" fill="#2d7a45">LowPwrRequest off</text>
+
+    <!-- ModulePwrUp → ModuleReady -->
+    <line x1="220" y1="430" x2="220" y2="470" stroke="#3fb950" stroke-width="1.5" marker-end="url(#ah-grn)"/>
+    <text x="228" y="455" class="sl" fill="#2d7a45">power-up complete</text>
+
+    <!-- ── ModuleReady → ModulePwrDn ──
+         Route: right edge ModuleReady (330,488) → right to x=360 → up to y=405 → right to ModulePwrDn (490,405) -->
+    <path d="M 330 488 L 362 488 L 362 405 L 490 405" fill="none" stroke="#d29922" stroke-width="1" marker-end="url(#ah)"/>
+    <text x="368" y="445" class="sl" fill="#7a6010">pwr-dn request</text>
+
+    <!-- ── ModuleReady → ModuleFault ──
+         Route: right edge ModuleReady (330,495) → right to ModuleFault (490,495) -->
+    <line x1="330" y1="500" x2="490" y2="500" stroke="#f85149" stroke-width="1" marker-end="url(#ah-red)"/>
+    <text x="375" y="516" class="sl" fill="#8b2020">fault detected</text>
+
+    <!-- ── ModulePwrDn → ModuleLowPwr ──
+         Route: bottom of ModulePwrDn (600,430) → down to y=450 → right to x=730 → up to y=315 → left to ModuleLowPwr right edge (330,315) -->
+    <path d="M 600 430 L 600 450 L 730 450 L 730 315 L 330 315" fill="none" stroke="#d29922" stroke-width="1" stroke-dasharray="5 3" marker-end="url(#ah)"/>
+    <text x="694" y="395" class="sl" fill="#7a6010" text-anchor="middle" transform="rotate(-90,694,395)">power-down done</text>
+
+    <!-- ── ModuleFault → Reset ──
+         Route: right edge ModuleFault (710,495) → right to x=750 → up to y=135 → left to Reset right edge (330,135) -->
+    <path d="M 710 495 L 750 495 L 750 135 L 330 135" fill="none" stroke="#f85149" stroke-width="1" stroke-dasharray="5 3" marker-end="url(#ah-red)"/>
+    <text x="740" y="315" class="sl" fill="#8b2020" text-anchor="middle" transform="rotate(-90,740,315)">fault recovery → reset</text>
+
+    <!-- ── Hardware reset note ── -->
+    <rect x="20" y="590" width="720" height="36" rx="6" fill="none" stroke="#484f58" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="380" y="612" text-anchor="middle" class="ss" fill="#484f58">⚡  Hardware ResetL signal (any state) → Resetting state   |   LowPwrRequestHW/SW affect ModuleLowPwr ↔ ModulePwrUp transitions</text>
+
+    <!-- ── State labels on left ── -->
+    <text x="100" y="45" text-anchor="end" class="sl" fill="#484f58">①</text>
+    <text x="100" y="135" text-anchor="end" class="sl" fill="#484f58">②</text>
+    <text x="100" y="225" text-anchor="end" class="sl" fill="#58a6ff">③</text>
+    <text x="100" y="315" text-anchor="end" class="sl" fill="#3fb950">④</text>
+    <text x="100" y="405" text-anchor="end" class="sl" fill="#d29922">⑤</text>
+    <text x="100" y="495" text-anchor="end" class="sl" fill="#58c962">⑥</text>
+    <text x="480" y="405" text-anchor="end" class="sl" fill="#d29922">⑦</text>
+    <text x="480" y="495" text-anchor="end" class="sl" fill="#f85149">⑧</text>
+  </svg>
+  </div>
+
+  <div class="desc-grid">
+    <div class="desc-card"><div class="state-name" style="color:#484f58">① Resetting</div><p>Transient state when hardware reset is asserted. All circuitry shuts down. Module exits immediately when reset is deasserted.</p></div>
+    <div class="desc-card"><div class="state-name" style="color:#8b949e">② Reset</div><p>Ground state. Lowest power consumption. Module retains only essential hardware state. Awaits management interface initialization.</p></div>
+    <div class="desc-card"><div class="state-name" style="color:#58a6ff">③ MgmtInit</div><p>Module initializes the management communication interface (I2CMCI). Minimum memory registers become accessible.</p></div>
+    <div class="desc-card"><div class="state-name" style="color:#3fb950">④ ModuleLowPwr</div><p>Basic manageability is available. Host can read/write management registers. Data paths are not powered. LowPwrRequest is asserted.</p></div>
+    <div class="desc-card"><div class="state-name" style="color:#d29922">⑤ ModulePwrUp</div><p>Module is powering up. Transceiver hardware initializing. Duration controlled by PowerUp timing parameters.</p></div>
+    <div class="desc-card"><div class="state-name" style="color:#58c962">⑥ ModuleReady ★</div><p>Fully operational. Data paths can be configured and activated. Normal operating state for all transceiver functions.</p></div>
+    <div class="desc-card"><div class="state-name" style="color:#d29922">⑦ ModulePwrDn</div><p>Module powering down. Initiated by host asserting LowPwrRequest. Transitions back to ModuleLowPwr when complete.</p></div>
+    <div class="desc-card"><div class="state-name" style="color:#f85149">⑧ ModuleFault</div><p>A module-level fault has occurred. Fault details readable in FaultCause register. Recovery requires hardware reset.</p></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     TAB 2: Data Path State Machine
+═══════════════════════════════════════════════════ -->
+<div class="panel" id="tab2">
+  <p class="section-title">Section 6.3.3 — Data Path State Machine (DPSM) · Per data path instance</p>
+  <div class="diagram-wrap">
+  <svg width="100%" viewBox="0 0 760 620" xmlns="http://www.w3.org/2000/svg" style="max-width:760px">
+    <defs>
+      <marker id="bh" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M1 1L9 5L1 9" fill="none" stroke="#8b949e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </marker>
+      <marker id="bh-grn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M1 1L9 5L1 9" fill="none" stroke="#3fb950" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </marker>
+      <marker id="bh-amb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M1 1L9 5L1 9" fill="none" stroke="#d29922" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </marker>
+      <style>
+        .dn { font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; }
+        .ds { font-family:'IBM Plex Sans',sans-serif; font-size:11px; }
+        .dl { font-family:'IBM Plex Sans',sans-serif; font-size:10px; }
+      </style>
+    </defs>
+
+    <!-- Main column: center x=220, x=110 w=220 h=50 gap=30 -->
+
+    <!-- 1. DPDeactivated -->
+    <rect x="110" y="20" width="220" height="50" rx="8" fill="#21262d" stroke="#30363d" stroke-width="1.5"/>
+    <text x="220" y="41" text-anchor="middle" class="dn" fill="#8b949e">DPDeactivated</text>
+    <text x="220" y="59" text-anchor="middle" class="ds" fill="#484f58">Ground state — no data path</text>
+
+    <!-- 2. DPInit -->
+    <rect x="110" y="115" width="220" height="50" rx="8" fill="#0d2535" stroke="#58a6ff" stroke-width="1.5"/>
+    <text x="220" y="136" text-anchor="middle" class="dn" fill="#58a6ff">DPInit</text>
+    <text x="220" y="154" text-anchor="middle" class="ds" fill="#4a7fa8">Initializing data path</text>
+
+    <!-- 3. DPInitialized -->
+    <rect x="110" y="210" width="220" height="50" rx="8" fill="#0d1e18" stroke="#3fb950" stroke-width="1.5"/>
+    <text x="220" y="231" text-anchor="middle" class="dn" fill="#3fb950">DPInitialized</text>
+    <text x="220" y="249" text-anchor="middle" class="ds" fill="#2d7a45">Initialized &amp; configured</text>
+
+    <!-- 4. DPTxTurnOn -->
+    <rect x="110" y="305" width="220" height="50" rx="8" fill="#1e1a0d" stroke="#d29922" stroke-width="1.5"/>
+    <text x="220" y="326" text-anchor="middle" class="dn" fill="#d29922">DPTxTurnOn</text>
+    <text x="220" y="344" text-anchor="middle" class="ds" fill="#7a6010">Turning on Tx laser</text>
+
+    <!-- 5. DPActivated -->
+    <rect x="110" y="400" width="220" height="50" rx="8" fill="#0d1e18" stroke="#58c962" stroke-width="2"/>
+    <text x="220" y="421" text-anchor="middle" class="dn" fill="#58c962">DPActivated ★</text>
+    <text x="220" y="439" text-anchor="middle" class="ds" fill="#3a8f46">Fully operational</text>
+
+    <!-- RIGHT COLUMN -->
+    <!-- 6. DPDeinit: y=210 aligned with DPInitialized -->
+    <rect x="490" y="210" width="220" height="50" rx="8" fill="#21262d" stroke="#30363d" stroke-width="1.5"/>
+    <text x="600" y="231" text-anchor="middle" class="dn" fill="#8b949e">DPDeinit</text>
+    <text x="600" y="249" text-anchor="middle" class="ds" fill="#484f58">Deinitializing</text>
+
+    <!-- 7. DPTxTurnOff: y=400 aligned with DPActivated -->
+    <rect x="490" y="400" width="220" height="50" rx="8" fill="#1e1a0d" stroke="#d29922" stroke-width="1.5"/>
+    <text x="600" y="421" text-anchor="middle" class="dn" fill="#d29922">DPTxTurnOff</text>
+    <text x="600" y="439" text-anchor="middle" class="ds" fill="#7a6010">Turning off Tx laser</text>
+
+    <!-- ── MAIN FLOW ARROWS ── -->
+
+    <!-- DPDeactivated → DPInit -->
+    <line x1="220" y1="70" x2="220" y2="115" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#bh-grn)"/>
+    <text x="228" y="98" class="dl" fill="#4a7fa8">ApplyDPInit trigger</text>
+
+    <!-- DPInit → DPInitialized -->
+    <line x1="220" y1="165" x2="220" y2="210" stroke="#3fb950" stroke-width="1.5" marker-end="url(#bh-grn)"/>
+    <text x="228" y="193" class="dl" fill="#2d7a45">DPInit complete</text>
+
+    <!-- DPInitialized → DPTxTurnOn -->
+    <line x1="220" y1="260" x2="220" y2="305" stroke="#d29922" stroke-width="1.5" marker-end="url(#bh-amb)"/>
+    <text x="228" y="288" class="dl" fill="#7a6010">ApplyImmediate (Tx enable)</text>
+
+    <!-- DPTxTurnOn → DPActivated -->
+    <line x1="220" y1="355" x2="220" y2="400" stroke="#58c962" stroke-width="1.5" marker-end="url(#bh-grn)"/>
+    <text x="228" y="383" class="dl" fill="#3a8f46">Tx turn-on done</text>
+
+    <!-- ── DPActivated → DPTxTurnOff (horizontal right) ── -->
+    <line x1="330" y1="425" x2="490" y2="425" stroke="#d29922" stroke-width="1" marker-end="url(#bh-amb)"/>
+    <text x="400" y="415" text-anchor="middle" class="dl" fill="#7a6010">ApplyImmediate (Tx disable)</text>
+
+    <!-- ── DPTxTurnOff → DPInitialized (route: right→up→left) ── -->
+    <!-- From (710,425) → (730,425) → (730,235) → (330,235) -->
+    <path d="M 710 425 L 730 425 L 730 235 L 330 235" fill="none" stroke="#d29922" stroke-width="1" stroke-dasharray="5 3" marker-end="url(#bh-amb)"/>
+    <text x="720" y="330" class="dl" fill="#7a6010" text-anchor="middle" transform="rotate(-90,720,330)">Tx turn-off done</text>
+
+    <!-- ── DPInitialized → DPDeinit (horizontal right) ── -->
+    <line x1="330" y1="230" x2="490" y2="230" stroke="#8b949e" stroke-width="1" marker-end="url(#bh)"/>
+    <text x="400" y="220" text-anchor="middle" class="dl" fill="#484f58">ApplyDPInit (deactivate)</text>
+
+    <!-- ── DPDeinit → DPDeactivated
+         Route: left edge DPDeinit (490,235) → left to x=420 → up to y=45 → left to DPDeactivated right (330,45) -->
+    <path d="M 490 235 L 422 235 L 422 45 L 330 45" fill="none" stroke="#8b949e" stroke-width="1" stroke-dasharray="5 3" marker-end="url(#bh)"/>
+    <text x="415" y="140" class="dl" fill="#484f58" text-anchor="middle" transform="rotate(-90,415,140)">deinit complete</text>
+
+    <!-- ── Note: Both loops shown ── -->
+    <!-- Loop annotations -->
+    <rect x="20" y="480" width="340" height="56" rx="6" fill="#0d1e18" stroke="#3fb950" stroke-width="1"/>
+    <text x="190" y="500" text-anchor="middle" class="ds" fill="#3fb950">▶ Activation loop</text>
+    <text x="190" y="516" text-anchor="middle" class="dl" fill="#2d7a45">DPDeactivated → DPInit → DPInitialized</text>
+    <text x="190" y="530" text-anchor="middle" class="dl" fill="#2d7a45">→ DPTxTurnOn → DPActivated</text>
+
+    <rect x="370" y="480" width="340" height="56" rx="6" fill="#1e1a0d" stroke="#d29922" stroke-width="1"/>
+    <text x="540" y="500" text-anchor="middle" class="ds" fill="#d29922">↺ Hot reconfiguration loop</text>
+    <text x="540" y="516" text-anchor="middle" class="dl" fill="#7a6010">DPActivated → DPTxTurnOff → DPInitialized</text>
+    <text x="540" y="530" text-anchor="middle" class="dl" fill="#7a6010">→ (re-config) → DPTxTurnOn → DPActivated</text>
+
+    <!-- ── Note bottom ── -->
+    <rect x="20" y="548" width="720" height="32" rx="6" fill="none" stroke="#484f58" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="380" y="568" text-anchor="middle" class="ds" fill="#484f58">One DPSM instance per data path · DPInitPending flag indicates apply trigger is pending · ConfigStatus tracks command execution</text>
+
+    <!-- State numbers -->
+    <text x="100" y="45" text-anchor="end" class="dl" fill="#484f58">①</text>
+    <text x="100" y="140" text-anchor="end" class="dl" fill="#58a6ff">②</text>
+    <text x="100" y="235" text-anchor="end" class="dl" fill="#3fb950">③</text>
+    <text x="100" y="330" text-anchor="end" class="dl" fill="#d29922">④</text>
+    <text x="100" y="425" text-anchor="end" class="dl" fill="#58c962">⑤</text>
+    <text x="480" y="235" text-anchor="end" class="dl" fill="#484f58">⑥</text>
+    <text x="480" y="425" text-anchor="end" class="dl" fill="#d29922">⑦</text>
+  </svg>
+  </div>
+
+  <div class="desc-grid">
+    <div class="desc-card"><div class="state-name" style="color:#484f58">① DPDeactivated</div><p>Ground state. Data path is inactive, no signal traffic. Host triggers DPInit by writing ApplyDPInit register.</p></div>
+    <div class="desc-card"><div class="state-name" style="color:#58a6ff">② DPInit</div><p>Data path is being initialized with the staged control set configuration. Module processes AppSel and equalization settings.</p></div>
+    <div class="desc-card"><div class="state-name" style="color:#3fb950">③ DPInitialized</div><p>Data path initialized. Signal integrity settings applied. Ready for Tx activation or deinitialization. Can be reconfigured here.</p></div>
+    <div class="desc-card"><div class="state-name" style="color:#d29922">④ DPTxTurnOn</div><p>Tx laser is being turned on. Transient state while laser biasing, modulation, and output power stabilize.</p></div>
+    <div class="desc-card"><div class="state-name" style="color:#58c962">⑤ DPActivated ★</div><p>Fully operational. Tx laser is on, Rx path active. Data is flowing. Hot reconfiguration via ApplyImmediate is possible.</p></div>
+    <div class="desc-card"><div class="state-name" style="color:#484f58">⑥ DPDeinit</div><p>Data path deinitializing. Laser off, clocks and PLLs powering down. Returns to DPDeactivated when complete.</p></div>
+    <div class="desc-card"><div class="state-name" style="color:#d29922">⑦ DPTxTurnOff</div><p>Tx laser being turned off. Used in hot reconfiguration: after turn-off, module returns to DPInitialized for re-configuration.</p></div>
+  </div>
+</div>
+</div><!-- end .content -->
+
+<script>
+function showTab(i) {
+  document.querySelectorAll('.tab-btn').forEach((b, j) => b.classList.toggle('active', j === i));
+  document.querySelectorAll('.panel').forEach((p, j) => p.classList.toggle('active', j === i));
+}
+</script>
+</body>
+</html>
